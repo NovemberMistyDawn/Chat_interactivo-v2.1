@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interactivo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+
+<body>
+    <div id="welcome">
+        <h1>Bienvenido al Chat</h1>
+        <input type="text" id="username" placeholder="Ingresa tu nombre" />
+        <button id="joinChat">Unirse al chat</button>
+    </div>
+  
+    <div id="chat" style="display:none;">
+        <h3>Usuarios conectados:</h3>
+        <div id="users"></div>
+        <div id="messages" class="messages"></div>
+        <input type="text" id="messageInput" placeholder="Escribe un mensaje" />
+        <button onclick="sendMessage()">Enviar</button> 
+        <div class="format-options">
+            <button id="boldButton" onclick="toggleBold()">B</button>
+            <button id="italicButton" onclick="toggleItalic()">I</button>
+            <button id="emojiButton" onclick="toggleEmoji()">😊</button>
+            <select id="fontSelector" onchange="changeFont()">
+                <option value="Arial">Arial</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Tahoma">Tahoma</option>
+            </select>
+        </div>
+        <div class="emoji-container" id="emojiContainer" style="display:none;">
+            <span class="emoji" onclick="insertEmoji('😊')">😊</span>
+            <!-- More emojis here -->
+        </div>
+    </div>
+  
+    <div id="privateChatContainer"></div>
+  
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+  
+    <script>
+        const firebaseConfig = {
+            apiKey: "API_KEY",
+            authDomain: "chat-interactivo-ce323.firebaseapp.com",
+            databaseURL: "https://chat-interactivo-ce323-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "chat-interactivo-ce323",
+            storageBucket: "chat-interactivo-ce323.appspot.com",
+            messagingSenderId: "474997098356",
+            appId: "1:474997098356:web:86ed5449562419fa964e21",
+            measurementId: "G-FRE2732VJC"
+        };
+  
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const usersRef = db.collection('users');
+        const messagesRef = db.collection('mensajes');
+        let userId = null; 
+        let userName = null;
+  
+        document.getElementById('joinChat').addEventListener('click', () => {
+            userName = document.getElementById('username').value.trim();
+            if (userName) {
+                usersRef.add({
+                    name: userName,
+                    joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then((docRef) => {
+                    userId = docRef.id;
+                    document.getElementById('welcome').style.display = 'none';
+                    document.getElementById('chat').style.display = 'block';
+                    loadUsers(); // Load users when user joins the chat
+                    loadMessages(); // Load messages when user joins the chat
+                }).catch((error) => {
+                    console.error("Error al guardar el usuario: ", error);
+                });
+            } else {
+                alert('Por favor, ingresa un nombre.');
+            }
+        });
+  
+        function loadUsers() {
+            usersRef.onSnapshot((snapshot) => {
+                const usersContainer = document.getElementById('users');
+                usersContainer.innerHTML = ''; // Clear existing users
+                snapshot.forEach((doc) => {
+                    const userData = doc.data();
+                    if (doc.id !== userId) { // Don't show the current user
+                        const userButton = document.createElement('button');
+                        userButton.textContent = userData.name;
+                        userButton.onclick = () => openPrivateChat(userData.name);
+                        usersContainer.appendChild(userButton);
+                    }
+                });
+            });
+        }
+  
+        function loadMessages() {
+            messagesRef.orderBy('timestamp').onSnapshot((snapshot) => {
+                const messagesContainer = document.getElementById('messages');
+                messagesContainer.innerHTML = ''; // Clear existing messages
+                snapshot.forEach((doc) => {
+                    const messageData = doc.data();
+                    const messageElement = document.createElement('div');
+                    messageElement.innerHTML = `<strong>${messageData.sender}:</strong> ${messageData.message}`;
+                    messagesContainer.appendChild(messageElement);
+                });
+            });
+        }
+  
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+  
+            if (message && userId) {
+                messagesRef.add({
+                    message: message,
+                    sender: userName,
+                    userId: userId,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                input.value = '';
+            }
+        }
+  
+        function openPrivateChat(recipient) {
+            const chatId = `privateChat_${recipient}`;
+            let chatWindow = document.getElementById(chatId);
+  
+            if (!chatWindow) {
+                chatWindow = document.createElement('div');
+                chatWindow.id = chatId;
+                chatWindow.className = 'private-chat';
+                chatWindow.innerHTML = `
+                    <strong>Chat con ${recipient}</strong>
+                    <div class="private-messages" id="${chatId}_messages"></div>
+                    <input type="text" class="private-input" id="${chatId}_input" placeholder="Escribe un mensaje" />
+                    <button onclick="sendPrivateMessage('${recipient}')">Enviar</button>
+                `;
+                document.getElementById('privateChatContainer').appendChild(chatWindow);
+  
+                document.getElementById(`${chatId}_input`).addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        sendPrivateMessage(recipient);
+                    }
+                });
+            }
+  
+            chatWindow.style.display = 'block';
+            document.getElementById(`${chatId}_input`).focus();
+        }
+  
+        function sendPrivateMessage(recipient) {
+            const chatId = `privateChat_${recipient}`;
+            const messageInput = document.getElementById(`${chatId}_input`);
+            const message = messageInput.value.trim();
+            if (message) {
+                const privateMessagesContainer = document.getElementById(`${chatId}_messages`);
+                const messageElement = document.createElement('div');
+                messageElement.textContent = `${userName} (a ${recipient}): ${message}`;
+                privateMessagesContainer.appendChild(messageElement);
+                messageInput.value = '';
+                messageInput.focus();
+            }
+        }
+    </script>
+  </body>
+  </html>

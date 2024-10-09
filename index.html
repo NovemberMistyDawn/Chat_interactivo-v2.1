@@ -7,14 +7,13 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 
-
 <body>
     <div id="welcome">
         <h1>Bienvenido al Chat</h1>
         <input type="text" id="username" placeholder="Ingresa tu nombre" />
         <button id="joinChat">Unirse al chat</button>
     </div>
-  
+
     <div id="chat" style="display:none;">
         <h3>Usuarios conectados:</h3>
         <div id="users"></div>
@@ -22,29 +21,28 @@
         <input type="text" id="messageInput" placeholder="Escribe un mensaje" />
         <button onclick="sendMessage()">Enviar</button> 
         <div class="format-options">
-            <button id="boldButton" onclick="toggleBold()">B</button>
-            <button id="italicButton" onclick="toggleItalic()">I</button>
-            <button id="emojiButton" onclick="toggleEmoji()">😊</button>
-            <select id="fontSelector" onchange="changeFont()">
-                <option value="Arial">Arial</option>
-                <option value="Verdana">Verdana</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Courier New">Courier New</option>
-                <option value="Tahoma">Tahoma</option>
-            </select>
-        </div>
-        <div class="emoji-container" id="emojiContainer" style="display:none;">
-            <span class="emoji" onclick="insertEmoji('😊')">😊</span>
-            <!-- More emojis here -->
+            <button id="emojiButton" onclick="toggleEmojiPicker()">😊</button>
         </div>
     </div>
-  
+
+    <div id="emojiPicker" style="display:none;" class="emoji-picker">
+        <span onclick="addEmoji('😊')">😊</span>
+        <span onclick="addEmoji('😂')">😂</span>
+        <span onclick="addEmoji('😢')">😢</span>
+        <span onclick="addEmoji('❤️')">❤️</span>
+        <span onclick="addEmoji('👍')">👍</span>
+        <span onclick="addEmoji('🎉')">🎉</span>
+        <span onclick="addEmoji('😎')">😎</span>
+        <span onclick="addEmoji('😜')">😜</span>
+        <!-- Agrega más emojis según sea necesario -->
+    </div>
+
     <div id="privateChatContainer"></div>
-  
+
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-  
+
     <script>
         const firebaseConfig = {
             apiKey: "API_KEY",
@@ -56,14 +54,14 @@
             appId: "1:474997098356:web:86ed5449562419fa964e21",
             measurementId: "G-FRE2732VJC"
         };
-  
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const usersRef = db.collection('users');
         const messagesRef = db.collection('mensajes');
         let userId = null; 
         let userName = null;
-  
+
         document.getElementById('joinChat').addEventListener('click', () => {
             userName = document.getElementById('username').value.trim();
             if (userName) {
@@ -74,8 +72,8 @@
                     userId = docRef.id;
                     document.getElementById('welcome').style.display = 'none';
                     document.getElementById('chat').style.display = 'block';
-                    loadUsers(); // Load users when user joins the chat
-                    loadMessages(); // Load messages when user joins the chat
+                    loadUsers(); 
+                    loadMessages();
                 }).catch((error) => {
                     console.error("Error al guardar el usuario: ", error);
                 });
@@ -83,14 +81,14 @@
                 alert('Por favor, ingresa un nombre.');
             }
         });
-  
+
         function loadUsers() {
             usersRef.onSnapshot((snapshot) => {
                 const usersContainer = document.getElementById('users');
-                usersContainer.innerHTML = ''; // Clear existing users
+                usersContainer.innerHTML = ''; 
                 snapshot.forEach((doc) => {
                     const userData = doc.data();
-                    if (doc.id !== userId) { // Don't show the current user
+                    if (doc.id !== userId) { 
                         const userButton = document.createElement('button');
                         userButton.textContent = userData.name;
                         userButton.onclick = () => openPrivateChat(userData.name);
@@ -99,24 +97,25 @@
                 });
             });
         }
-  
+
         function loadMessages() {
-            messagesRef.orderBy('timestamp').onSnapshot((snapshot) => {
+            messagesRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
                 const messagesContainer = document.getElementById('messages');
-                messagesContainer.innerHTML = ''; // Clear existing messages
+                messagesContainer.innerHTML = ''; 
                 snapshot.forEach((doc) => {
                     const messageData = doc.data();
                     const messageElement = document.createElement('div');
-                    messageElement.innerHTML = `<strong>${messageData.sender}:</strong> ${messageData.message}`;
+                    messageElement.textContent = `${messageData.sender}: ${messageData.message}`;
                     messagesContainer.appendChild(messageElement);
                 });
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
             });
         }
-  
+
         function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
-  
+
             if (message && userId) {
                 messagesRef.add({
                     message: message,
@@ -127,11 +126,22 @@
                 input.value = '';
             }
         }
-  
+
+        function toggleEmojiPicker() {
+            const emojiPicker = document.getElementById('emojiPicker');
+            emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function addEmoji(emoji) {
+            const input = document.getElementById('messageInput');
+            input.value += emoji; 
+            toggleEmojiPicker(); 
+        }
+
         function openPrivateChat(recipient) {
             const chatId = `privateChat_${recipient}`;
             let chatWindow = document.getElementById(chatId);
-  
+
             if (!chatWindow) {
                 chatWindow = document.createElement('div');
                 chatWindow.id = chatId;
@@ -143,18 +153,18 @@
                     <button onclick="sendPrivateMessage('${recipient}')">Enviar</button>
                 `;
                 document.getElementById('privateChatContainer').appendChild(chatWindow);
-  
+
                 document.getElementById(`${chatId}_input`).addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
                         sendPrivateMessage(recipient);
                     }
                 });
             }
-  
+
             chatWindow.style.display = 'block';
             document.getElementById(`${chatId}_input`).focus();
         }
-  
+
         function sendPrivateMessage(recipient) {
             const chatId = `privateChat_${recipient}`;
             const messageInput = document.getElementById(`${chatId}_input`);
@@ -169,5 +179,5 @@
             }
         }
     </script>
-  </body>
-  </html>
+</body>
+</html>

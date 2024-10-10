@@ -32,6 +32,46 @@ body {
   margin-bottom: 10px;
 }
 
+.message-input-container {
+  display: flex;
+  align-items: center; /* Alinea los elementos verticalmente en el centro */
+  gap: 10px; /* Espacio entre cada elemento */
+  margin-top: 10px; /* Espacio superior para separar del resto */
+}
+
+/* Estilo para el campo de entrada de mensajes */
+#messageInput {
+  flex: 1; /* Hace que ocupe todo el espacio disponible */
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+/* Estilo para el botón de enviar */
+#sendButton {
+  background: linear-gradient(to right, #d80e6c, #a54aa5);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  transition: 0.3s;
+}
+
+/* Cambio de color al pasar el ratón sobre el botón */
+#sendButton:hover {
+  background: linear-gradient(to right, #a54aa5, #d80e6c);
+}
+
+/* Estilo para el botón de emoji */
+#emojiButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+}
 #messages {
   max-height: 400px;
   overflow-y: auto;

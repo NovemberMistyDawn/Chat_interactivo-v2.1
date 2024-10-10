@@ -15,6 +15,7 @@
     </div>
 
     <div id="chat" style="display:none;">
+        <button id="toggleUsersButton">Ocultar Usuarios</button> <!-- Botón para mostrar/ocultar usuarios -->
         <h3>Usuarios conectados:</h3>
         <div id="users"></div>
         <div id="messages" class="messages"></div>
@@ -99,18 +100,31 @@
         }
 
         function loadMessages() {
-            messagesRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
-                const messagesContainer = document.getElementById('messages');
-                messagesContainer.innerHTML = ''; 
-                snapshot.forEach((doc) => {
-                    const messageData = doc.data();
-                    const messageElement = document.createElement('div');
-                    messageElement.textContent = `${messageData.sender}: ${messageData.message}`;
-                    messagesContainer.appendChild(messageElement);
-                });
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            });
-        }
+    messagesRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
+        const messagesContainer = document.getElementById('messages');
+        messagesContainer.innerHTML = ''; 
+        snapshot.forEach((doc) => {
+            const messageData = doc.data();
+            const messageElement = document.createElement('div');
+
+            // Verificar si el mensaje fue enviado por el usuario actual
+            if (messageData.userId === userId) {
+                messageElement.classList.add('message', 'sent');
+            } else {
+                messageElement.classList.add('message', 'received');
+            }
+
+            // Asignar el contenido del mensaje
+            messageElement.textContent = `${messageData.sender}: ${messageData.message}`;
+            
+            // Añadir el mensaje al contenedor
+            messagesContainer.appendChild(messageElement);
+        });
+
+        // Desplazar hacia abajo para mostrar los mensajes más recientes
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+}
 
         function sendMessage() {
             const input = document.getElementById('messageInput');
@@ -178,6 +192,18 @@
                 messageInput.focus();
             }
         }
+
+        // Lógica para alternar la visibilidad de la lista de usuarios
+        document.getElementById('toggleUsersButton').addEventListener('click', () => {
+            const usersContainer = document.getElementById('users');
+            if (usersContainer.style.display === 'none') {
+                usersContainer.style.display = 'block';
+                document.getElementById('toggleUsersButton').textContent = 'Ocultar Usuarios';
+            } else {
+                usersContainer.style.display = 'none';
+                document.getElementById('toggleUsersButton').textContent = 'Mostrar Usuarios';
+            }
+        });
     </script>
 </body>
 </html>

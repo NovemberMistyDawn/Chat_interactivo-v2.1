@@ -176,3 +176,81 @@ function toggleItalicPrivate() {
   isItalic = !isItalic;
   document.querySelector(`#privateChat_${currentUser} button:nth-of-type(2)`).classList.toggle('active', isItalic);
 }
+
+
+
+
+//lo nuevo para crear el chat privado!
+
+function openPrivateChat(recipientName) {
+  const recipient = users.find(user => user.name === recipientName);
+  if (!recipient) return;
+  
+  const chatId = [userId, recipient.id].sort().join('_'); // ID único para cada conversación entre dos usuarios
+  const chatWindowId = `privateChat_${chatId}`;
+  
+  // Verificar si la ventana de chat ya existe
+  let chatWindow = document.getElementById(chatWindowId);
+  if (!chatWindow) {
+      // Crear la ventana de chat si no existe
+      chatWindow = document.createElement('div');
+      chatWindow.id = chatWindowId;
+      chatWindow.className = 'private-chat';
+      chatWindow.innerHTML = `
+          <strong>Chat con ${recipientName}</strong>
+          <div class="private-messages" id="${chatWindowId}_messages"></div>
+          <input type="text" class="private-input" id="${chatWindowId}_input" placeholder="Escribe un mensaje" />
+          <button onclick="sendPrivateMessage('${chatId}', '${recipient.id}')">Enviar</button>
+      `;
+      document.getElementById('privateChatContainer').appendChild(chatWindow);
+
+      // Escuchar mensajes de este chat privado en Firestore
+      loadPrivateMessages(chatId, chatWindowId);
+
+      // Enviar mensaje con Enter en el chat privado
+      document.getElementById(`${chatWindowId}_input`).addEventListener('keypress', function(event) {
+          if (event.key === 'Enter') {
+              sendPrivateMessage(chatId, recipient.id);
+          }
+      });
+  }
+  chatWindow.style.display = 'block';
+  document.getElementById(`${chatWindowId}_input`).focus();
+}
+
+function loadPrivateMessages(chatId, chatWindowId) {
+  const privateMessagesRef = db.collection('privateChats').doc(chatId).collection('messages').orderBy('timestamp', 'asc');
+  
+  privateMessagesRef.onSnapshot((snapshot) => {
+      const messagesContainer = document.getElementById(`${chatWindowId}_messages`);
+      messagesContainer.innerHTML = ''; // Limpiar mensajes previos
+      
+      snapshot.forEach((doc) => {
+          const messageData = doc.data();
+          const messageElement = document.createElement('div');
+          messageElement.textContent = `${messageData.sender === userId ? 'Yo' : messageData.sender}: ${messageData.text}`;
+          messagesContainer.appendChild(messageElement);
+      });
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  });
+}
+
+function sendPrivateMessage(chatId, recipientId) {
+  const messageInput = document.getElementById(`privateChat_${chatId}_input`);
+  const message = messageInput.value.trim();
+
+  if (message) {
+      const privateMessagesRef = db.collection('privateChats').doc(chatId).collection('messages');
+      
+      privateMessagesRef.add({
+          text: message,
+          sender: userId,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+          messageInput.value = '';
+          messageInput.focus();
+      }).catch((error) => {
+          console.error("Error al enviar el mensaje: ", error);
+      });
+  }
+}

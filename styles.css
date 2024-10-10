@@ -1,10 +1,22 @@
+@font-face {
+  font-family: "MadeInfinity";
+  src: url("font/made_infinity/MADEINFINITYPersonalUse-Regular.otf");
+}
+
+*{
+  font-family: "MadeInfinity";
+}
+
+
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
+  font-family: "MadeInfinity";
+  background: linear-gradient(135deg, rgba(255, 105, 180, 0.8), rgba(128, 0, 128, 0.8)), 
+              url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/CrXUJMAAAAASUVORK5CYII=');
+  background-size: cover;
   margin: 0;
   padding: 20px;
 }
-
 #chat {
   background: #fff;
   border-radius: 5px;
@@ -24,6 +36,67 @@ body {
   max-height: 400px;
   overflow-y: auto;
   margin-bottom: 10px;
+}
+.messages {
+  display: flex;
+  flex-direction: column; /* Alinea los elementos en una columna (verticalmente) */
+  gap: 10px; /* Espacio entre cada mensaje */
+  padding: 10px;
+  max-height: 500px; /* Altura máxima del contenedor */
+  overflow-y: auto; /* Permite el desplazamiento cuando hay muchos mensajes */
+}
+
+
+.message {
+  display: inline-block;
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 20px;
+  word-wrap: break-word; 
+  max-width: 70%;
+  position: relative; /* Necesario para los pseudo-elementos */
+}
+
+/* Estilo para los mensajes enviados */
+.message.sent {
+  color: white;
+  background-color: #ffb6c1;
+  align-self: flex-end;
+  border-bottom-right-radius: 5px; /* Solo esta esquina será recta */
+  background: linear-gradient(to right, #d80e6c, #a54aa5);
+}
+
+/* Pseudo-elemento para la "punta" del bocadillo de mensajes enviados */
+.message.sent::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  transform: translateY(-50%);
+  border-width: 10px;
+  border-style: solid;
+  border-color: transparent transparent transparent #d80e6c;
+}
+
+/* Estilo para los mensajes recibidos */
+.message.received {
+  color: white;
+  background-color: #c8a2c8;
+  align-self: flex-start;
+  border-bottom-left-radius: 5px; /* Solo esta esquina será recta */
+  background: linear-gradient(to right, #3090ad, #0f26ac);
+}
+
+/* Pseudo-elemento para la "punta" del bocadillo de mensajes recibidos */
+.message.received::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -10px;
+  transform: translateY(-50%);
+  border-width: 10px;
+  border-style: solid;
+  border-color: transparent #3090ad transparent transparent;
 }
 
 .emoji {

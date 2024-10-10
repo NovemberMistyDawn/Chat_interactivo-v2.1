@@ -25,6 +25,8 @@
         <div class="format-options">
             <button id="emojiButton" onclick="toggleEmojiPicker()">😊</button>
         </div>
+        <button id="uploadButton" onclick="document.getElementById('fileInput').click();">📷 Subir Imagen</button>
+    <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="uploadImage(event)" />
     </div>
     </div>
 
@@ -101,6 +103,7 @@
             });
         }
 
+        
         function loadMessages() {
     messagesRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
         const messagesContainer = document.getElementById('messages');
@@ -116,17 +119,26 @@
                 messageElement.classList.add('message', 'received');
             }
 
-            // Asignar el contenido del mensaje
-            messageElement.textContent = `${messageData.sender}: ${messageData.message}`;
-            
-            // Añadir el mensaje al contenedor
+            // Comprobar si hay una imagen
+            if (messageData.imageUrl) {
+                const imgElement = document.createElement('img');
+                imgElement.src = messageData.imageUrl;
+                imgElement.alt = "Imagen enviada";
+                imgElement.style.maxWidth = "100%"; // Ajustar el tamaño de la imagen
+                imgElement.style.borderRadius = "20px"; // Añadir bordes redondeados
+                messageElement.appendChild(imgElement);
+            } else {
+                messageElement.textContent = `${messageData.sender}: ${messageData.message}`;
+            }
+
             messagesContainer.appendChild(messageElement);
         });
-
-        // Desplazar hacia abajo para mostrar los mensajes más recientes
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     });
 }
+
+
+
 
         function sendMessage() {
             const input = document.getElementById('messageInput');
@@ -142,6 +154,37 @@
                 input.value = '';
             }
         }
+
+
+
+
+        function uploadImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const storageRef = firebase.storage().ref();
+        const fileRef = storageRef.child(`images/${file.name}`);
+        
+        fileRef.put(file).then(() => {
+            // Obtener la URL de descarga de la imagen
+            fileRef.getDownloadURL().then((url) => {
+                sendMessageWithImage(url);
+            });
+        }).catch((error) => {
+            console.error("Error al subir la imagen: ", error);
+        });
+    }
+}
+
+function sendMessageWithImage(imageUrl) {
+    if (userId) {
+        messagesRef.add({
+            imageUrl: imageUrl,
+            sender: userName,
+            userId: userId,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+}
 
         function toggleEmojiPicker() {
             const emojiPicker = document.getElementById('emojiPicker');
